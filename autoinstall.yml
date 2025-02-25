@@ -1,0 +1,65 @@
+#cloud-config
+autoinstall:
+  version: 1
+  network:
+    ethernets:
+      eth0:
+        dhcp4: true
+    version: 2
+  storage:
+    layout:
+      name: lvm
+    config:
+      - path: /dev/sda
+        wipe: true
+        grub_device: true
+        type: disk
+        id: disk0
+      - device: disk0
+        type: partition
+        size: 512MiB
+        flag: boot
+        id: boot-partition
+      - device: disk0
+        type: partition
+        wipe: true
+        id: encrypted-partition
+      - name: luks
+        type: luks
+        device: encrypted-partition
+        key: /media/usb/luks-keyfile
+        id: luks-device
+      - device: luks-device
+        type: lvm_volgroup
+        name: vg0
+        id: vg0
+      - name: root
+        volgroup: vg0
+        size: 100%
+        filesystem:
+          format: ext4
+          mountpoint: /
+  user-data:
+    packages:
+      - wget
+      - gpg
+    runcmd:
+      - |
+        # Download Microsoft GPG key once
+        wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.gpg
+        sudo install -o root -g root -m 644 microsoft.gpg /etc/apt/trusted.gpg.d/microsoft.gpg
+
+        # Install Microsoft Edge
+        sudo sh -c 'echo "deb [arch=amd64] https://packages.microsoft.com/repos/edge stable main" > /etc/apt/sources.list.d/microsoft-edge.list'
+
+        # Install Microsoft Intune
+        sudo sh -c 'echo "deb [arch=amd64] https://packages.microsoft.com/repos/microsoft-ubuntu-$(lsb_release -cs)-prod $(lsb_release -cs) main" > /etc/apt/sources.list.d/microsoft-prod.list'
+
+        # Install Visual Studio Code
+        sudo sh -c 'echo "deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main" > /etc/apt/sources.list.d/vscode.list'
+
+        # Update and install all packages
+        sudo apt update
+        sudo apt install -y microsoft-edge-stable intune-portal code
+  late-commands:
+    - echo "Installation completed successfully." > /var/log/autoinstall.log

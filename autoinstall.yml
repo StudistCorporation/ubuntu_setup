@@ -1,65 +1,129 @@
 #cloud-config
 autoinstall:
   version: 1
+  interactive-sections:
+    - identity
+    - network
+  identity:
+    hostname: studist-ubuntu-desktop
+    username: ubuntu
+    password: "$6$exDY1mhS4KUYCE/2$zmn9ToZwTKLhCw.b4/b.ZRTIZM30JZ4QrOQ2aOXJ8yk96xpcCof0kxKwuX1kqLG/ygbJ1f8wxED22bTL4F46P0"
+  locale: en_US.UTF-8
+  keyboard:
+    layout: us
   network:
-    ethernets:
-      eth0:
-        dhcp4: true
     version: 2
+    ethernets:
+      any-eth:
+        match:
+          name: "en*"
+        dhcp4: true
+        dhcp6: true
+        optional: true
+    wifis:
+      any-wifi:
+        match:
+          name: "wl*"
+        dhcp4: true
+        dhcp6: true
+        optional: true
+  ssh:
+    install-server: true
+    allow-pw: true
+  source:
+    id: ubuntu-desktop
+    search_drivers: true
+  shutdown: reboot
   storage:
-    layout:
-      name: lvm
     config:
-      - path: /dev/sda
-        wipe: true
-        grub_device: true
-        type: disk
+      - type: disk
         id: disk0
-      - device: disk0
-        type: partition
-        size: 512MiB
+        match:
+          size: largest
+        ptable: gpt
+        wipe: superblock-recursive
+        preserve: false
+        grub_device: false
+      - type: partition
+        id: partition-efi
+        device: disk0
+        size: 1G
         flag: boot
-        id: boot-partition
-      - device: disk0
-        type: partition
-        wipe: true
-        id: encrypted-partition
-      - name: luks
-        type: luks
-        device: encrypted-partition
-        key: /media/usb/luks-keyfile
-        id: luks-device
-      - device: luks-device
-        type: lvm_volgroup
-        name: vg0
+        number: 1
+        preserve: false
+        grub_device: true
+      - type: partition
+        id: partition-boot
+        device: disk0
+        size: 2G
+        number: 2
+        preserve: false
+      - type: partition
+        id: partition-main
+        device: disk0
+        size: -1
+        number: 3
+        preserve: false
+      - type: dm_crypt
+        id: dm-crypt-main
+        dm_name: dm_crypt-main # Explicitly set the mapper name
+        volume: partition-main
+        key: "ubuntuKey"
+        preserve: false
+      - type: lvm_volgroup
         id: vg0
-      - name: root
+        name: ubuntu-vg
+        devices:
+          - dm-crypt-main
+        preserve: false
+      - type: lvm_partition
+        id: lv-swap
         volgroup: vg0
-        size: 100%
-        filesystem:
-          format: ext4
-          mountpoint: /
-  user-data:
-    packages:
-      - wget
-      - gpg
-    runcmd:
-      - |
-        # Download Microsoft GPG key once
-        wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.gpg
-        sudo install -o root -g root -m 644 microsoft.gpg /etc/apt/trusted.gpg.d/microsoft.gpg
-
-        # Install Microsoft Edge
-        sudo sh -c 'echo "deb [arch=amd64] https://packages.microsoft.com/repos/edge stable main" > /etc/apt/sources.list.d/microsoft-edge.list'
-
-        # Install Microsoft Intune
-        sudo sh -c 'echo "deb [arch=amd64] https://packages.microsoft.com/repos/microsoft-ubuntu-$(lsb_release -cs)-prod $(lsb_release -cs) main" > /etc/apt/sources.list.d/microsoft-prod.list'
-
-        # Install Visual Studio Code
-        sudo sh -c 'echo "deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main" > /etc/apt/sources.list.d/vscode.list'
-
-        # Update and install all packages
-        sudo apt update
-        sudo apt install -y microsoft-edge-stable intune-portal code
-  late-commands:
-    - echo "Installation completed successfully." > /var/log/autoinstall.log
+        name: swap
+        size: 8G
+        preserve: false
+      - type: lvm_partition
+        id: lv-root
+        volgroup: vg0
+        name: root
+        size: -1
+        preserve: false
+      - type: format
+        id: fs-efi
+        volume: partition-efi
+        fstype: vfat
+        preserve: false
+      - type: format
+        id: fs-boot
+        volume: partition-boot
+        fstype: ext4
+        preserve: false
+      - type: format
+        id: fs-root
+        volume: lv-root
+        fstype: ext4
+        preserve: false
+      - type: format
+        id: fs-swap
+        volume: lv-swap
+        fstype: swap
+        preserve: false
+      - type: mount
+        id: mount-root
+        device: fs-root
+        path: /
+      - type: mount
+        id: mount-boot
+        device: fs-boot
+        path: /boot
+      - type: mount
+        id: mount-efi
+        device: fs-efi
+        path: /boot/efi
+      - type: mount
+        id: mount-swap
+        device: fs-swap
+        path: none
+  packages:
+    - cryptsetup-initramfs
+    - cryptsetup-bin

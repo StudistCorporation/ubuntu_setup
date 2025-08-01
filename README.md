@@ -98,7 +98,7 @@ TPM2ベースの自動ディスク復号を設定・管理するための包括�
 - `cleanup-tpm-slots_clevis.sh` - 重複TPMスロット削除
 - `cleanup-password-duplicates_clevis.sh` - 重複パスワード削除
 
-詳細なドキュメントは[luks_with_tpm2/README_clevis.md](luks%20with%20tpm2/README_clevis.md)を参照してください。
+詳細なドキュメントは[luks_with_tpm2/README_clevis.md](luks_with_tpm2/README_clevis.md)を参照してください。
 
 ## セキュリティに関する考慮事項
 

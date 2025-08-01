@@ -11,7 +11,7 @@ Ubuntu 24.04 LTS向けの自動セットアップツール（フルディスク�
 - **TPM2自動アンロック**: パスワードなしでの起動時ディスク復号化
 - **セキュアブート対応**
 
-ディスク暗号化の初期パスワードは `ubuntuKey` です。これはもちろんとても脆弱で平文で書かれている一時パスワードです。この autoinstall.yml を使用してインストール後、後述の luks with tpm2/ ディレクトリのスクリプトを使用して、この一時パスワードは削除し、新な強い個人のパスワードと TPM2 による自動アンロックと、リカバリーキーを設定してください。
+ディスク暗号化の初期パスワードは `ubuntuKey` です。これはもちろんとても脆弱で平文で書かれている一時パスワードです。この autoinstall.yml を使用してインストール後、後述の luks_with_tpm2/ ディレクトリのスクリプトを使用して、この一時パスワードは削除し、新な強い個人のパスワードと TPM2 による自動アンロックと、リカバリーキーを設定してください。
 
 ## クイックスタート
 
@@ -31,7 +31,8 @@ Ubuntu 24.04 LTS向けの自動セットアップツール（フルディスク�
 
 このタイミングではディスク複合化に `ubuntuKey` という脆弱なパスワードが使用されている状態です。以下の手順でTPM2を設定し、より安全な自動アンロックを実現します。
 
-このsetup時に新しいディスク複合化のためのパスワードを設定します。このパスワードについてもこちらに準拠してください。 https://teachme.jp/8/manuals/6248598
+このsetup時に新しいディスク複合化のためのパスワードを設定します。このパスワードについてもこちらに準拠してください。
+https://teachme.jp/8/manuals/6248598
 こちらのパスワードはなんらかの原因により TPM2 が利用できない場合のバックアップパスワードとして使用されます。
 
 また、さらに念のためにリカバリーキーも設定します。リカバリーキーはTPM2が利用できない場合の最終手段として使用されます。
@@ -40,7 +41,7 @@ Ubuntu 24.04 LTS向けの自動セットアップツール（フルディスク�
 ```bash
 # このリポジトリをクローン
 git clone https://github.com/StudistCorporation/ubuntu_setup
-cd ubuntu_setup/luks\ with\ tpm2/
+cd ubuntu_setup/luks_with_tpm2/
 
 # セットアップスクリプトを実行
 sudo ./setup-tpm-luks-unlock_clevis.sh
@@ -76,7 +77,7 @@ Ubuntu自動インストール用のcloud-init設定ファイル：
     - スワップ: 8GB
     - ルート: 残り全容量
 
-### 2. TPM2 LUKS自動アンロックスクリプト（`luks with tpm2/`）
+### 2. TPM2 LUKS自動アンロックスクリプト（`luks_with_tpm2/`）
 
 TPM2ベースの自動ディスク復号を設定・管理するための包括的なスクリプト群。
 
@@ -97,7 +98,7 @@ TPM2ベースの自動ディスク復号を設定・管理するための包括�
 - `cleanup-tpm-slots_clevis.sh` - 重複TPMスロット削除
 - `cleanup-password-duplicates_clevis.sh` - 重複パスワード削除
 
-詳細なドキュメントは[luks with tpm2/README_clevis.md](luks%20with%20tpm2/README_clevis.md)を参照してください。
+詳細なドキュメントは[luks_with_tpm2/README_clevis.md](luks%20with%20tpm2/README_clevis.md)を参照してください。
 
 ## セキュリティに関する考慮事項
 

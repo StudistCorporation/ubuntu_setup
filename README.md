@@ -17,6 +17,10 @@ Ubuntu 24.04 LTS向けの自動セットアップツール（フルディスク�
 
 ### ステップ1: Ubuntuインストール
 
+インストール実行前にBIOSの設定を確認し、以下の設定を行ってください：
+- Allow Microsoft 3rd Party UEFI CA を ON にする
+  - これを有効にすることで、SecureBootのDBが更新され、Ubuntuでもセキュアブートが有効になります。
+
 1. Ubuntu 24.04 LTSインストールメディアを作成
 2. インストール時に以下のURLを指定
   - `https://raw.githubusercontent.com/StudistCorporation/ubuntu_setup/refs/heads/main/autoinstall.yml`

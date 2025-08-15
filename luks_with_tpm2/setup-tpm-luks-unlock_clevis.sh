@@ -273,11 +273,11 @@ setup_new_credentials() {
 
     if [[ -z "$NEW_PASSWORD" ]]; then
       print_info "Skipping new password setup"
-      # We'll need to get the existing password for operations
-      read -r -s -p "Enter existing LUKS password for operations: " NEW_PASSWORD
+      # We'll need to get the current password for operations
+      read -r -s -p "Enter current LUKS password for operations: " NEW_PASSWORD
       echo
       if printf '%s' "$NEW_PASSWORD" | cryptsetup luksOpen --test-passphrase "$LUKS_DEVICE" 2>/dev/null; then
-        print_success "Using existing password for operations"
+        print_success "Using current password for operations"
         password_needed=false
       else
         print_error "Invalid password"
@@ -440,16 +440,16 @@ manage_key_slots() {
   show_luks_slots
 
   # Ask about removing old password
-  print_warning "The original installation password is still active"
-  read -r -p "Remove the original installation password? (y/N): " response
+  print_warning "The original password is still active"
+  read -r -p "Remove the original password? (y/N): " response
 
   if [[ "$response" =~ ^[Yy]$ ]]; then
-    # Find which slot has the installation password
-    print_info "Identifying installation password slot..."
+    # Find which slot has the original password
+    print_info "Identifying original password slot..."
 
     # First, try to identify by testing with the original password
     local ubuntu_key_slot=""
-    read -r -s -p "Enter the original installation password (ubuntuKey) to identify its slot: " UBUNTU_KEY
+    read -r -s -p "Enter the original password (like ubuntuKey) to identify its slot: " UBUNTU_KEY
     echo
 
     # Test each slot with the provided password
@@ -457,7 +457,7 @@ manage_key_slots() {
       if cryptsetup luksDump "$LUKS_DEVICE" | grep -q "Key Slot $i: ENABLED"; then
         if printf '%s' "$UBUNTU_KEY" | cryptsetup luksOpen --test-passphrase "$LUKS_DEVICE" --key-slot "$i" 2>/dev/null; then
           ubuntu_key_slot="$i"
-          print_success "Found installation password in slot $i"
+          print_success "Found original password in slot $i"
           break
         fi
       fi
@@ -467,11 +467,11 @@ manage_key_slots() {
       # Double-check it's not a TPM or our new passwords
       if ! clevis luks list -d "$LUKS_DEVICE" 2>/dev/null | grep -q "^$ubuntu_key_slot:"; then
         if [[ "$ubuntu_key_slot" != "$new_slot" ]] && [[ "$ubuntu_key_slot" != "$recovery_slot" ]]; then
-          print_info "Removing installation password from slot $ubuntu_key_slot..."
+          print_info "Removing original password from slot $ubuntu_key_slot..."
           if printf '%s' "$NEW_PASSWORD" | cryptsetup luksKillSlot "$LUKS_DEVICE" "$ubuntu_key_slot"; then
-            print_success "Installation password removed successfully"
+            print_success "Original password removed successfully"
           else
-            print_error "Failed to remove installation password"
+            print_error "Failed to remove original password"
           fi
         else
           print_warning "The provided password matches a newly created slot. Not removing."
@@ -480,7 +480,7 @@ manage_key_slots() {
         print_warning "The identified slot is used by TPM. Not removing."
       fi
     else
-      print_warning "Could not identify installation password slot with the provided password"
+      print_warning "Could not identify original password slot with the provided password"
 
       # Fallback to the original logic
       local slots_to_check=()
@@ -712,4 +712,3 @@ main() {
 
 # Run main function
 main "$@"
-
